@@ -2,39 +2,57 @@ package main
 
 import (
 	"fmt"
+
 	"image"
 	"image/color"
+	"image/draw"
 	"image/jpeg"
-	"image/png"
+		"image/png"
 	"log"
-	"math"
 	"os"
-	//Initilize so image.Decode can understand these formats
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
-
-	"github.com/BurntSushi/graphics-go/graphics"
+	//	"github.com/BurntSushi/graphics-go/graphics"
+	//	"math"
 )
 
 var (
-	violet = color.RGBA{148, 0, 211, 255}
-	indigo = color.RGBA{75, 0, 130, 255}
-	blue   = color.RGBA{0, 0, 255, 255}
-	green  = color.RGBA{0, 255, 0, 255}
-	yellow = color.RGBA{255, 255, 0, 255}
-	orange = color.RGBA{255, 127, 0, 255}
-	red    = color.RGBA{255, 0, 0, 255}
+	red    = color.RGBA{255, 0, 0, 150}
+	orange = color.RGBA{255, 127, 0, 150}
+	yellow = color.RGBA{255, 255, 0, 150}
+	green  = color.RGBA{0, 255, 0, 150}
+	blue   = color.RGBA{0, 0, 255, 150}
+	indigo = color.RGBA{75, 0, 130, 150}
+	violet = color.RGBA{148, 0, 211, 150}
 )
 
-var colors = []color.RGBA{violet, indigo, blue, green, yellow, orange, red}
+var colors = []color.RGBA{red, yellow, orange, green, blue, indigo, violet}
 
 func main() {
-	generateImage("test.png", 200, 400)
-	getImgDimensions("test.png")
-	rotateImage("papadu.jpg", "papadu2.jpg")
-	printImageConfig("papadu.jpg")
+	generateImage("test.jpg", 20, 10)
+	getImgDimensions("test.jpg")
+	printImageConfig("test.jpg")
 	makeRainbow("rainbow.png", 200, 400)
+	rainbowOverlay("gopherized.jpg", "rainbowedGopherized.jpg")
+	//	rotateImage("gopherized.png", "rotatedGopherized.png") //BONUS: rotating image with an external package
+}
+func checkErr(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+func generateImage(filename string, width, height int) {
+	myImage := image.NewRGBA(image.Rect(0, 0, width, height))
+	for i := 0; i < (width * height * 4); i++ {
+		myImage.Pix[i] = 122
+	}
+	// outputFile is a File type which satisfies Writer interface
+	outputFile, err := os.Create(filename)
+	checkErr(err)
+	defer outputFile.Close()
+	// Encode takes a writer interface and an image interface
+	// We pass it the File and the RGBA
+	jpeg.Encode(outputFile, myImage, &jpeg.Options{100})
+	checkErr(err)
+	fmt.Println("Generated ", filename)
 }
 
 func getImgDimensions(filename string) {
@@ -42,9 +60,10 @@ func getImgDimensions(filename string) {
 	checkErr(err)
 	defer imageFile.Close()
 
-	decodedImg, err := png.Decode(imageFile) //decode the whole image
+	//decode the []bytes to image.Image
+	decodedImg, err := jpeg.Decode(imageFile)
 	dimensions := decodedImg.Bounds()
-	fmt.Println(dimensions.Dx(), dimensions.Dy())
+	fmt.Println("width: ", dimensions.Dx(), " Height: ", dimensions.Dy())
 }
 
 func makeRainbow(filename string, width, height int) {
@@ -63,7 +82,7 @@ func makeRainbow(filename string, width, height int) {
 
 	png.Encode(imageFile, newImg)
 	checkErr(err)
-	fmt.Println("Rainbow shooting from "+filename+" width and height: ", width, height)
+	fmt.Println("Made rainbow: "+filename+" width and height: ", width, height)
 }
 
 func printImageConfig(filename string) {
@@ -76,12 +95,38 @@ func printImageConfig(filename string) {
 	fmt.Println("Decoded config for "+filename+" : ", imageConfig)
 
 }
+
+func rainbowOverlay(givenFilename, newFilename string) {
+	//get the given image's dimension
+	givenFile, err := os.Open(givenFilename)
+	checkErr(err)
+	defer givenFile.Close()
+	givenImg, _, _ := image.Decode(givenFile)
+	dimensions := givenImg.Bounds()
+
+	makeRainbow("rainbow.png", dimensions.Dx(), dimensions.Dy())
+	srcFile, err := os.Open("rainbow.png")
+	checkErr(err)
+	defer srcFile.Close()
+	srcImg, _, _ := image.Decode(srcFile)
+
+	m := image.NewRGBA(image.Rect(0, 0, dimensions.Dx(), dimensions.Dy()))
+//	draw.Draw(m, m.Bounds(), &image.Uniform{color.Black}, image.Point{}, draw.Src)
+	draw.Draw(m, m.Bounds(), givenImg, image.Point{0, 0}, draw.Src)
+	draw.Draw(m, m.Bounds(), srcImg, image.Point{0, 0}, draw.Over)
+
+	imageFile, err := os.Create(newFilename)
+	jpeg.Encode(imageFile, m, &jpeg.Options{100})
+	checkErr(err)
+}
+
+/*BONUS STUFF
 func rotateImage(srcFilename, dstFilename string) {
 	srcImgFile, err := os.Open(srcFilename)
 	checkErr(err)
 	defer srcImgFile.Close()
 
-	imageConf, err := jpeg.Decode(srcImgFile)
+	imageConf, err := png.Decode(srcImgFile)
 	dimensions := imageConf.Bounds()
 
 	newImg := image.NewRGBA(image.Rect(0, 0, dimensions.Dy(), dimensions.Dx()))
@@ -89,29 +134,8 @@ func rotateImage(srcFilename, dstFilename string) {
 
 	dstImageFile, _ := os.Create(dstFilename)
 	defer dstImageFile.Close()
-	jpeg.Encode(dstImageFile, newImg, &jpeg.Options{jpeg.DefaultQuality})
+	png.Encode(dstImageFile, newImg)
 
 	fmt.Println(dstFilename + " is rotated version of " + srcFilename)
 }
-
-func checkErr(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-func generateImage(filename string, width, height int) {
-
-	myImage := image.NewRGBA(image.Rect(0, 0, width, height))
-	for i := 0; i < (width * height * 4); i++ {
-		myImage.Pix[i] = 122
-	}
-	// outputFile is a File type which satisfies Writer interface
-	outputFile, err := os.Create(filename)
-	checkErr(err)
-	defer outputFile.Close()
-	// Encode takes a writer interface and an image interface
-	// We pass it the File and the RGBA
-	png.Encode(outputFile, myImage)
-	checkErr(err)
-	fmt.Println(filename + " created")
-}
+*/
