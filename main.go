@@ -93,7 +93,6 @@ func printImageConfig(filename string) {
 	imageConfig, err := jpeg.DecodeConfig(imageFile)
 	checkErr(err)
 	fmt.Println("Decoded config for "+filename+" : ", imageConfig)
-
 }
 
 func rainbowOverlay(givenFilename, newFilename string) {
@@ -111,7 +110,6 @@ func rainbowOverlay(givenFilename, newFilename string) {
 	srcImg, _, _ := image.Decode(srcFile)
 
 	m := image.NewRGBA(image.Rect(0, 0, dimensions.Dx(), dimensions.Dy()))
-//	draw.Draw(m, m.Bounds(), &image.Uniform{color.Black}, image.Point{}, draw.Src)
 	draw.Draw(m, m.Bounds(), givenImg, image.Point{0, 0}, draw.Src)
 	draw.Draw(m, m.Bounds(), srcImg, image.Point{0, 0}, draw.Over)
 
