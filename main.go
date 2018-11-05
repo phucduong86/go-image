@@ -7,7 +7,7 @@ import (
 	"image/color"
 	"image/draw"
 	"image/jpeg"
-		"image/png"
+	"image/png"
 	"log"
 	"os"
 	//	"github.com/BurntSushi/graphics-go/graphics"
@@ -29,7 +29,6 @@ var colors = []color.RGBA{red, yellow, orange, green, blue, indigo, violet}
 func main() {
 	generateImage("test.jpg", 20, 10)
 	getImgDimensions("test.jpg")
-	printImageConfig("test.jpg")
 	makeRainbow("rainbow.png", 200, 400)
 	rainbowOverlay("gopherized.jpg", "rainbowedGopherized.jpg")
 	//	rotateImage("gopherized.png", "rotatedGopherized.png") //BONUS: rotating image with an external package
